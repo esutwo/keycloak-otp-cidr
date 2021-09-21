@@ -23,6 +23,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.authentication.authenticators.browser.OTPFormAuthenticator;
 
 import javax.ws.rs.core.MultivaluedMap;
 import java.util.List;
@@ -30,9 +31,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Pattern;
 
-import static org.keycloak.authentication.authenticators.browser.ConditionalOtpFormAuthenticator.OtpDecision.ABSTAIN;
-import static org.keycloak.authentication.authenticators.browser.ConditionalOtpFormAuthenticator.OtpDecision.SHOW_OTP;
-import static org.keycloak.authentication.authenticators.browser.ConditionalOtpFormAuthenticator.OtpDecision.SKIP_OTP;
+import static com.github.esutwo.keycloak.advconditionalmfa.AdvConditionalOtpFormAuthenticator.OtpDecision.ABSTAIN;
+import static com.github.esutwo.keycloak.advconditionalmfa.AdvConditionalOtpFormAuthenticator.OtpDecision.SHOW_OTP;
+import static com.github.esutwo.keycloak.advconditionalmfa.AdvConditionalOtpFormAuthenticator.OtpDecision.SKIP_OTP;
 import static org.keycloak.models.utils.KeycloakModelUtils.getRoleFromString;
 
 /**
@@ -96,6 +97,8 @@ public class AdvConditionalOtpFormAuthenticator extends OTPFormAuthenticator {
 
     public static final String SKIP_OTP_FOR_HTTP_HEADER = "noOtpRequiredForHeaderPattern";
 
+    public static final String SKIP_OTP_FOR_CIDR = "noOtpRequiredForCidr";
+
     public static final String FORCE_OTP_FOR_HTTP_HEADER = "forceOtpForHeaderPattern";
 
     public static final String DEFAULT_OTP_OUTCOME = "defaultOtpOutcome";
@@ -118,6 +121,10 @@ public class AdvConditionalOtpFormAuthenticator extends OTPFormAuthenticator {
         }
 
         if (tryConcludeBasedOn(voteForHttpHeaderMatchesPattern(context.getHttpRequest().getHttpHeaders().getRequestHeaders(), config), context)) {
+            return;
+        }
+
+        if (tryConcludeBasedOn(voteForCIDR(context.getConnection().getRemoteAddr(), config), context)) {
             return;
         }
 
@@ -205,6 +212,28 @@ public class AdvConditionalOtpFormAuthenticator extends OTPFormAuthenticator {
                 return ABSTAIN;
         }
     }
+
+    private OtpDecision voteForCIDR(String IpAddress, Map<String, String> config) {
+
+        if (!config.containsKey(SKIP_OTP_FOR_CIDR)) {
+            return ABSTAIN;
+        }
+
+        String[] skipCIDRList = config.get(SKIP_OTP_FOR_CIDR).split("\\s*,\\s*");
+
+        for (String CIDR : skipCIDRList) {
+            if ((new IpAddressMatcher(CIDR).matches(IpAddress))) {
+                return SKIP_OTP;
+            }
+        }
+
+        //if (containsMatchingRequestHeader(requestHeaders, config.get(FORCE_OTP_FOR_HTTP_HEADER))) {
+        //    return SHOW_OTP;
+        //}
+
+        return ABSTAIN;
+    }
+
 
     private OtpDecision voteForHttpHeaderMatchesPattern(MultivaluedMap<String, String> requestHeaders, Map<String, String> config) {
 

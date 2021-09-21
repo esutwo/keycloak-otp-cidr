@@ -29,14 +29,15 @@ import org.keycloak.provider.ProviderConfigProperty;
 import java.util.List;
 
 import static java.util.Arrays.asList;
-import static org.keycloak.authentication.authenticators.browser.ConditionalOtpFormAuthenticator.DEFAULT_OTP_OUTCOME;
-import static org.keycloak.authentication.authenticators.browser.ConditionalOtpFormAuthenticator.FORCE;
-import static org.keycloak.authentication.authenticators.browser.ConditionalOtpFormAuthenticator.FORCE_OTP_FOR_HTTP_HEADER;
-import static org.keycloak.authentication.authenticators.browser.ConditionalOtpFormAuthenticator.FORCE_OTP_ROLE;
-import static org.keycloak.authentication.authenticators.browser.ConditionalOtpFormAuthenticator.OTP_CONTROL_USER_ATTRIBUTE;
-import static org.keycloak.authentication.authenticators.browser.ConditionalOtpFormAuthenticator.SKIP;
-import static org.keycloak.authentication.authenticators.browser.ConditionalOtpFormAuthenticator.SKIP_OTP_FOR_HTTP_HEADER;
-import static org.keycloak.authentication.authenticators.browser.ConditionalOtpFormAuthenticator.SKIP_OTP_ROLE;
+import static com.github.esutwo.keycloak.advconditionalmfa.AdvConditionalOtpFormAuthenticator.DEFAULT_OTP_OUTCOME;
+import static com.github.esutwo.keycloak.advconditionalmfa.AdvConditionalOtpFormAuthenticator.FORCE;
+import static com.github.esutwo.keycloak.advconditionalmfa.AdvConditionalOtpFormAuthenticator.FORCE_OTP_FOR_HTTP_HEADER;
+import static com.github.esutwo.keycloak.advconditionalmfa.AdvConditionalOtpFormAuthenticator.FORCE_OTP_ROLE;
+import static com.github.esutwo.keycloak.advconditionalmfa.AdvConditionalOtpFormAuthenticator.OTP_CONTROL_USER_ATTRIBUTE;
+import static com.github.esutwo.keycloak.advconditionalmfa.AdvConditionalOtpFormAuthenticator.SKIP;
+import static com.github.esutwo.keycloak.advconditionalmfa.AdvConditionalOtpFormAuthenticator.SKIP_OTP_FOR_HTTP_HEADER;
+import static com.github.esutwo.keycloak.advconditionalmfa.AdvConditionalOtpFormAuthenticator.SKIP_OTP_FOR_CIDR;
+import static com.github.esutwo.keycloak.advconditionalmfa.AdvConditionalOtpFormAuthenticator.SKIP_OTP_ROLE;
 import static org.keycloak.provider.ProviderConfigProperty.LIST_TYPE;
 import static org.keycloak.provider.ProviderConfigProperty.ROLE_TYPE;
 import static org.keycloak.provider.ProviderConfigProperty.STRING_TYPE;
@@ -48,9 +49,9 @@ import static org.keycloak.provider.ProviderConfigProperty.STRING_TYPE;
  */
 public class AdvConditionalOtpFormAuthenticatorFactory implements AuthenticatorFactory {
 
-    public static final String PROVIDER_ID = "auth-conditional-otp-form";
+    public static final String PROVIDER_ID = "adv-auth-conditional-otp-form";
 
-    public static final ConditionalOtpFormAuthenticator SINGLETON = new AdvConditionalOtpFormAuthenticator();
+    public static final AdvConditionalOtpFormAuthenticator SINGLETON = new AdvConditionalOtpFormAuthenticator();
 
     @Override
     public Authenticator create(KeycloakSession session) {
@@ -100,7 +101,7 @@ public class AdvConditionalOtpFormAuthenticatorFactory implements AuthenticatorF
 
     @Override
     public String getDisplayType() {
-        return "Conditional OTP Form";
+        return "Adv Conditional OTP Form";
     }
 
     @Override
@@ -147,6 +148,15 @@ public class AdvConditionalOtpFormAuthenticatorFactory implements AuthenticatorF
         forceOtpForHttpHeader.setHelpText("OTP required if a HTTP request header matches the given pattern.");
         forceOtpForHttpHeader.setDefaultValue("");
 
+        ProviderConfigProperty skipOtpForCidr = new ProviderConfigProperty();
+        skipOtpForCidr.setType(STRING_TYPE);
+        skipOtpForCidr.setName(SKIP_OTP_FOR_CIDR);
+        skipOtpForCidr.setLabel("Skip OTP for CIDR");
+        skipOtpForCidr.setHelpText("OTP is skipped if the request IP comes from the defined CIDR." +
+                "Can be used to specify trusted networks via: 192.168.0.0/24" +
+                "In this case requests from 192.168.0.1 through 254 come from trusted sources.");
+        skipOtpForCidr.setDefaultValue("");
+
         ProviderConfigProperty defaultOutcome = new ProviderConfigProperty();
         defaultOutcome.setType(LIST_TYPE);
         defaultOutcome.setName(DEFAULT_OTP_OUTCOME);
@@ -154,6 +164,6 @@ public class AdvConditionalOtpFormAuthenticatorFactory implements AuthenticatorF
         defaultOutcome.setOptions(asList(SKIP, FORCE));
         defaultOutcome.setHelpText("What to do in case of every check abstains. Defaults to force OTP authentication.");
 
-        return asList(forceOtpUserAttribute, skipOtpRole, forceOtpRole, skipOtpForHttpHeader, forceOtpForHttpHeader, defaultOutcome);
+        return asList(forceOtpUserAttribute, skipOtpRole, forceOtpRole, skipOtpForHttpHeader, forceOtpForHttpHeader, skipOtpForCidr, defaultOutcome);
     }
 }
