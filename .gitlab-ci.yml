@@ -24,3 +24,13 @@ docker-build:
     - if: $CI_COMMIT_BRANCH
       exists:
         - Dockerfile
+
+deploy:
+  image: maven:3.8-jdk-11
+  stage: deploy
+  services:
+    - docker:dind
+  script:
+    - 'mvn deploy -s ci_settings.xml'
+  only:
+    - master
