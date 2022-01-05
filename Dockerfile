@@ -1,14 +1,16 @@
 FROM jboss/keycloak:15.0.2 as build
 
+ARG CI_MAVEN_VERSION=3.8.4
+
 COPY . /build
 
 USER 0
 
 RUN cd /tmp && \
-    curl --output maven.tar.gz https://dlcdn.apache.org/maven/maven-3/3.8.2/binaries/apache-maven-3.8.2-bin.tar.gz && \
+    curl --output maven.tar.gz https://archive.apache.org/dist/maven/maven-3/3.8.4/binaries/apache-maven-${CI_MAVEN_VERSION}-bin.tar.gz && \
     tar xvf maven.tar.gz && \
     cd /build && \
-    /tmp/apache-maven-3.8.2/bin/mvn package -Dhttps.protocols=TLSv1.2
+    /tmp/apache-maven-${CI_MAVEN_VERSION}/bin/mvn package -Dhttps.protocols=TLSv1.2
 
 FROM jboss/keycloak:15.0.2
 
